@@ -69,6 +69,12 @@ def image_details():
 
     return render_template('image-details.html', filename=filename, size=size, work_unit=work_unit, format=file_format, s3_image_url=decoded_image_url)
 
+@app.route('/avatar')
+def avatar():
+    text = urllib.parse.unquote(request.args.get('text'))
+
+    return render_template('avatar.html', text=text)
+
 
 def get_file_extension(filename):
     pattern = r'\.(\w+)$'
