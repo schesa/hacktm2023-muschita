@@ -8,11 +8,14 @@ WORKDIR /app
 COPY src/ /app/src
 COPY requirements.txt /app
 
+# Copy the .aws/credentials file to the container
+COPY credentials/credentials /root/.aws/credentials
+
 # Install project dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3.9 install --no-cache-dir -r requirements.txt
 
 # Expose the application port
 EXPOSE 5002
 
 # Run the application when the container starts
-CMD ["python", "src/app.py"]
+CMD ["python3.9", "src/app.py"]

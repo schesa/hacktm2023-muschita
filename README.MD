@@ -10,7 +10,7 @@ This project contains scripts and queries used by the MUSKIA sidekicker
  pip3.9 install -r requirements.txt
  python3.9 src/app.py
 ```
-http://127.0.0.1:5002git init
+http://127.0.0.1:5002
 
 ## Services
 Functionalities provided by the script arguments. These are mutually exclusive per script execution.
@@ -19,9 +19,10 @@ Functionalities provided by the script arguments. These are mutually exclusive p
 
 ## Run locally as docker:
 docker build -t image-uploader .
-docker run -p 5002:5000 -it image-uploader
+docker run -p 5002:5002 -it image-uploader
 
-
+##To stop it
+docker stop $(docker ps -q --filter ancestor=image-uploader)
 
 ###test call the container lambda handler (needs test_local to work with local profile)
 `curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations"      -d '{"test_local": "value"}'`
