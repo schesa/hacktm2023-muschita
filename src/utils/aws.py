@@ -5,7 +5,10 @@ from botocore.exceptions import ProfileNotFound
 
 def get_aws_credentials(profile_name):
     try:
-        session = boto3.Session(profile_name=profile_name)
+        # Set the AWS_SHARED_CREDENTIALS_FILE environment variable
+        os.environ['AWS_SHARED_CREDENTIALS_FILE'] = '/root/.aws/credentials'
+        print(f"Get AWS credentials for profile:{profile_name}")
+        session = boto3.Session(profile_name="muskia")
         credentials = session.get_credentials()
 
         if credentials is None:

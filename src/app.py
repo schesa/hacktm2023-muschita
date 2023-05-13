@@ -84,7 +84,17 @@ def get_file_extension(filename):
     else:
         return None
 
+def print_file_content(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            print(content)
+    except FileNotFoundError:
+        print(f"File '{file_path}' not found.")
+    except IOError:
+        print(f"An error occurred while reading the file '{file_path}'.")
 
 
 if __name__ == '__main__':
+    #print_file_content("/root/.aws/credentials")
     app.run(host='0.0.0.0', port=5002)

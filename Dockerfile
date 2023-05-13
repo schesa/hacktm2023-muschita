@@ -9,7 +9,8 @@ COPY src/ /app/src
 COPY requirements.txt /app
 
 # Copy the .aws/credentials file to the container
-COPY credentials/credentials /root/.aws/credentials
+COPY ./credentials/credentials /root/.aws/credentials
+RUN chmod 600 /root/.aws/credentials
 
 # Install project dependencies
 RUN pip3.9 install --no-cache-dir -r requirements.txt
