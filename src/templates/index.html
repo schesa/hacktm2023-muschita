@@ -5,36 +5,28 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-<div class="container">
-    <div class="row">
-        <div class="col-md-6">
-            <h2>Uploaded Image</h2>
-            <img id="uploaded-image" class="img-fluid" src="{{ image_url }}" alt="Uploaded Image">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Image Upload</a>
+</nav>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title">Upload Image</h4>
         </div>
-        <div class="col-md-6">
-            <h2>Image Details</h2>
-            <table class="table table-bordered">
-                <tr>
-                    <th>Filename:</th>
-                    <td>{{ image_details.Filename }}</td>
-                </tr>
-                <tr>
-                    <th>Size:</th>
-                    <td>{{ image_details.Size }}</td>
-                </tr>
-                <tr>
-                    <th>Format:</th>
-                    <td>{{ image_details.Format }}</td>
-                </tr>
-            </table>
+        <div class="card-body">
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+            <form method="POST" action="/" enctype="multipart/form-data">
+                <div class="form-group">
+                    <input type="file" name="file" class="form-control-file">
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
         </div>
     </div>
-    <form method="POST" action="/" enctype="multipart/form-data">
-        <div class="form-group">
-            <input type="file" name="file" class="form-control-file">
-        </div>
-        <button type="submit" class="btn btn-primary">Upload</button>
-    </form>
 </div>
 </body>
 </html>

@@ -1,14 +1,19 @@
 import logging
 import os
+import re
 import configparser
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+import urllib.parse
+
+from utils import aws
 
 app = Flask(__name__)
 
-# Set the AWS profile name
-aws_profile = "muskia"
+app.config['UPLOAD_FOLDER'] = "uploads"
+app.config['AWS_PROFILE'] = "muskia"
+
 
 # Configure the logger
 logging.basicConfig(level=logging.DEBUG)
@@ -19,33 +24,61 @@ def upload_file():
         # Retrieve the uploaded file
         file = request.files['file']
 
-        # Retrieve the S3 bucket and region for the selected profile from the AWS credentials file
-        config = configparser.ConfigParser()
-        config.read(os.path.expanduser("~/.aws/credentials"))
-        bucket_name = 'muskiatm'
-        region = config.get(aws_profile, 'region')
+        # Check if a file is selected
+        if file.filename == '':
+            return render_template('index.html', error_message='No file selected.')
 
-        # Create the S3 client
-        session = boto3.Session(profile_name=aws_profile)
-        s3 = session.client('s3')
+        last_number = aws.get_last_upload_number(app.config['AWS_PROFILE'])
+        print(f'Last upload number: {last_number}')
+        number=last_number+1
+        extension = get_file_extension(file.filename)
+        new_name=f'upload_{number}.{extension}'
+        new_directory=f'work_{number}'
 
-        # Enable debug logging for the S3 client
-        s3.meta.events.register('before-sign.s3', lambda **kwargs: logging.debug('S3 Request: %s', kwargs))
+        if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], new_directory)):
+           os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], new_directory))
+
+        # Save the uploaded file to the upload folder
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_directory, new_name)
+        file.save(file_path)
+
+        file_size = os.path.getsize(file_path)
+        file_format = file.content_type
+
 
         try:
             # Upload the file to S3
-            s3.upload_fileobj(file, bucket_name, file.filename)
+            image_url = aws.upload_file_to_s3(file_path,new_name,new_directory,app.config['AWS_PROFILE'])
 
-            # Render the uploaded image and its details
-            image_url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{file.filename}"
-            image_details = {'Filename': file.filename, 'Size': file.content_length, 'Format': file.content_type}
-
-            return render_template('index.html', image_url=image_url, image_details=image_details)
+            # Redirect to the result page with the uploaded image details
+            return redirect(url_for('image_details', filename=new_name, size=file_size, format=file_format, work_unit=new_directory, s3_image_url=urllib.parse.quote(image_url)))
         except (BotoCoreError, ClientError) as e:
             logging.error(e.response['Error']['Message'])
             return render_template('error.html', error_message="An error occurred while uploading the file.")
 
     return render_template('index.html')
+
+
+@app.route('/image_details')
+def image_details():
+    filename = request.args.get('filename')
+    size = request.args.get('size')
+    file_format = request.args.get('format')
+    work_unit = request.args.get('work_unit')
+    decoded_image_url = urllib.parse.unquote(request.args.get('s3_image_url'))
+
+    return render_template('image-details.html', filename=filename, size=size, work_unit=work_unit, format=file_format, s3_image_url=decoded_image_url)
+
+
+def get_file_extension(filename):
+    pattern = r'\.(\w+)$'
+    match = re.search(pattern, filename)
+    if match:
+        return match.group(1)
+    else:
+        return None
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5002)
