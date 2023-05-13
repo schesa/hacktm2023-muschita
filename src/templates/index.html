@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Uploader</title>
+</head>
+<body>
+<h1>Image Uploader</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/*">
+    <input type="submit" value="Upload">
+</form>
+
+{% if image_url %}
+<h2>Uploaded Image:</h2>
+<img src="{{ image_url }}" alt="Uploaded Image">
+
+<h2>Image Details:</h2>
+<ul>
+    {% for key, value in image_details.items() %}
+    <li><strong>{{ key }}:</strong> {{ value }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+</body>
+</html>
