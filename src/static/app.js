@@ -50,6 +50,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add the text block to the advanced texture
     advancedTexture.addControl(textBlock);
 
+    // Speech synthesis
+    var utterance = new SpeechSynthesisUtterance();
+    utterance.lang = "en-US";
+    utterance.text = text;
+
+    // Play the speech when the page loads
+    speechSynthesis.speak(utterance);
+
     // Render the scene
     engine.runRenderLoop(function () {
         scene.render();

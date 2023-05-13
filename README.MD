@@ -12,9 +12,12 @@ This project contains scripts and queries used by the MUSKIA sidekicker
 ```
 http://127.0.0.1:5002
 
+
+
 ## Services
-Functionalities provided by the script arguments. These are mutually exclusive per script execution.
-* **--upload image** Uploads an immage
+http://127.0.0.1:5002/avatar?text=testing
+
+https://www.urlencoder.org/
 
 
 ## Run locally as docker:
