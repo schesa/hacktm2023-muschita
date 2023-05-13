@@ -11,7 +11,7 @@ from utils import aws
 
 app = Flask(__name__)
 
-app.config['UPLOAD_FOLDER'] = "uploads"
+app.config['UPLOAD_FOLDER'] = "/uploads"
 app.config['AWS_PROFILE'] = "muskia"
 
 
@@ -28,6 +28,9 @@ def upload_file():
         if file.filename == '':
             return render_template('index.html', error_message='No file selected.')
 
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+           app.config['UPLOAD_FOLDER']="../uploads"
+
         last_number = aws.get_last_upload_number(app.config['AWS_PROFILE'])
         print(f'Last upload number: {last_number}')
         number=last_number+1
@@ -40,6 +43,7 @@ def upload_file():
 
         # Save the uploaded file to the upload folder
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_directory, new_name)
+        print(f"Saving locally in {file_path}")
         file.save(file_path)
 
         file_size = os.path.getsize(file_path)
