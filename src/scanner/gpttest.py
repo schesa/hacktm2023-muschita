@@ -21,7 +21,7 @@ class gpt():
         content_msg = ""
         if self.is_first_msg:
             self.is_first_msg = False
-            content_msg = "using the next information, build a pitch on behalf of the person (not use starting useless phrases, \
+            content_msg = "using the next information, generate a pitch on behalf of the person (not use starting useless phrases, \
                           start it immediately. use around 170 words):" + msg
         else:
             content_msg = "using the previous information and the new one, tune the pitch\
@@ -41,7 +41,7 @@ class gpt():
         for choice in response.choices:
             result += choice.message.content
         
-        print("iterator =", self.iteration, "content: \n", result)
+        print("iteration =", self.iteration, "content: \n", result)
         self.iteration = self.iteration + 1
         return result
    
@@ -64,7 +64,7 @@ class pitch_generator():
                 
             gptclient = gpt()
             with open(filepath, mode='r', newline='', encoding="utf8") as csvfile:
-                csv.field_size_limit(int(sys.maxsize/10))
+                csv.field_size_limit(1000000)
                 csvreader = csv.reader(csvfile)
                 for row in csvreader:
                     msg = row[0] + ": " + row[1]
@@ -86,4 +86,3 @@ class pitch_generator():
 #
 # if __name__ == "__main__":
 #     main()
-#
