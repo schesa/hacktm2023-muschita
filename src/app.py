@@ -6,6 +6,8 @@ from flask import Flask, render_template, request, redirect, url_for
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 import urllib.parse
+import time
+import shutil
 
 from utils import aws
 
@@ -13,7 +15,6 @@ app = Flask(__name__)
 
 app.config['UPLOAD_FOLDER'] = "/uploads"
 app.config['AWS_PROFILE'] = "muskia"
-
 
 # Configure the logger
 logging.basicConfig(level=logging.DEBUG)
@@ -37,12 +38,17 @@ def upload_file():
         extension = get_file_extension(file.filename)
         new_name=f'upload_{number}.{extension}'
         new_directory=f'work_{number}'
+        processed_directory=f'{new_directory}/processed_{number}'
 
         if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], new_directory)):
            os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], new_directory))
 
         # Save the uploaded file to the upload folder
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_directory, new_name)
+
+        processed_directory = os.path.join(app.config['UPLOAD_FOLDER'], processed_directory)
+        processed_picture_name = f"result.{extension}"
+
         print(f"Saving locally in {file_path}")
         file.save(file_path)
 
@@ -55,7 +61,10 @@ def upload_file():
             image_url = aws.upload_file_to_s3(file_path,new_name,new_directory,app.config['AWS_PROFILE'])
 
             # Redirect to the result page with the uploaded image details
-            return redirect(url_for('image_details', filename=new_name, size=file_size, format=file_format, work_unit=new_directory, s3_image_url=urllib.parse.quote(image_url)))
+            return redirect(url_for('image_details', filename=new_name, size=file_size, format=file_format, work_unit=new_directory,
+                                    s3_image_url=urllib.parse.quote(image_url),
+                                    processed_directory=urllib.parse.quote(processed_directory),
+                                    processed_picture_name=processed_picture_name))
         except (BotoCoreError, ClientError) as e:
             logging.error(e.response['Error']['Message'])
             return render_template('error.html', error_message="An error occurred while uploading the file.")
@@ -70,8 +79,19 @@ def image_details():
     file_format = request.args.get('format')
     work_unit = request.args.get('work_unit')
     decoded_image_url = urllib.parse.unquote(request.args.get('s3_image_url'))
+    processed_directory = urllib.parse.unquote(request.args.get('processed_directory'))
+    processed_picture_name = request.args.get('processed_picture_name')
+    processed_picture_path = f"{processed_directory}/{processed_picture_name}"
+    new_processed_picture_path = f"static/processed_{work_unit}/{processed_picture_name}"
 
-    return render_template('image-details.html', filename=filename, size=size, work_unit=work_unit, format=file_format, s3_image_url=decoded_image_url)
+    print(f"Waiting for {processed_picture_path}, to move it to {new_processed_picture_path}")
+    if check_file(processed_picture_path,20):
+        print(f"{processed_picture_path} arrived, copying to static")
+        copy_directory(processed_directory, f"src/static/processed_{work_unit}")
+
+
+    return render_template('image-details.html', filename=filename, size=size, work_unit=work_unit, format=file_format,
+                           s3_image_url=decoded_image_url, processed_picture_path=new_processed_picture_path)
 
 @app.route('/avatar')
 def avatar():
@@ -97,6 +117,31 @@ def print_file_content(file_path):
         print(f"File '{file_path}' not found.")
     except IOError:
         print(f"An error occurred while reading the file '{file_path}'.")
+
+def check_file(path, max_attempts=30):
+    attempts = 0
+    while attempts < max_attempts:
+        try:
+            if os.path.isfile(path):
+                print("File found!")
+                return True
+            else:
+                print("File not found, waiting for 1 second...")
+                time.sleep(1)
+                attempts += 1
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+    print("Giving up after 30 attempts.")
+    return False
+
+
+def copy_directory(src_dir, dst_dir):
+    try:
+        shutil.copytree(src_dir, dst_dir)
+        print(f"Directory {src_dir} copied to {dst_dir}.")
+    except Exception as e:
+        print(f"An error occurred while copying the directory: {e}")
 
 
 if __name__ == '__main__':
