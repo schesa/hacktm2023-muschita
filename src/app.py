@@ -10,6 +10,7 @@ import time
 import shutil
 
 from utils import aws
+from scanner.gpttest import pitch_generator
 
 app = Flask(__name__)
 
@@ -83,15 +84,37 @@ def image_details():
     processed_picture_name = request.args.get('processed_picture_name')
     processed_picture_path = f"{processed_directory}/{processed_picture_name}"
     new_processed_picture_path = f"static/processed_{work_unit}/{processed_picture_name}"
+    ident_file_path = f"src/static/processed_{work_unit}/names.txt"
+    comma_separated_ident = 'NoMatch'
+    pitch_array=[]
 
     print(f"Waiting for {processed_picture_path}, to move it to {new_processed_picture_path}")
     if check_file(processed_picture_path,20):
         print(f"{processed_picture_path} arrived, copying to static")
         copy_directory(processed_directory, f"src/static/processed_{work_unit}")
+        identified_array=[]
+        cleaned_array = []
+        try:
+           with open(ident_file_path, 'r') as file:
+              identified_array = [line.strip() for line in file]
 
+              cleaned_array = [item.replace(" ", "_") for item in identified_array]
+              cleaned_array = [item.replace("-", "_") for item in cleaned_array]
+              cleaned_array = [item.lower() for item in cleaned_array]
+              comma_separated_ident = ", ".join(cleaned_array)
+              print(comma_separated_ident)
+        except Exception as e:
+           print(f"An error occurred: {e}")
+
+    generator = pitch_generator()
+    for person in cleaned_array:
+        result = generator.get(person)
+        print(f"OpenAi Pitch for {person}:{result}")
+        pitch_array.append(f"Pitch for {person}: {result}")
 
     return render_template('image-details.html', filename=filename, size=size, work_unit=work_unit, format=file_format,
-                           s3_image_url=decoded_image_url, processed_picture_path=new_processed_picture_path)
+                           s3_image_url=decoded_image_url, processed_picture_path=new_processed_picture_path,
+                           comma_separated_ident=comma_separated_ident, pitch_array=pitch_array)
 
 @app.route('/avatar')
 def avatar():
@@ -146,4 +169,5 @@ def copy_directory(src_dir, dst_dir):
 
 if __name__ == '__main__':
     #print_file_content("/root/.aws/credentials")
+
     app.run(host='0.0.0.0', port=5002)

@@ -7,7 +7,7 @@ import csv
 
 class gpt():
     def __init__(self):
-        self.open_api_key = ""
+        self.open_api_key = "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"
         self.msg_length_max = 3000
         self.is_first_msg = True
         self.prev_conf = []
